@@ -44,27 +44,6 @@ internal static class Program
         // Parse a C++ files
         var compilation = CppParser.Parse(headerContent, parseOption);
 
-        var s3d = compilation.Namespaces.First(n => n.Name == "s3d");
-        if (s3d == null)
-        {
-            Console.WriteLine("Could not find the s3d namespace.");
-            return;
-        }
-
-        var sb = new StringBuilder();
-        foreach (var class_ in s3d.Classes)
-        {
-            sb.AppendLine($"{class_.FullName}");
-            foreach (var function in class_.Functions)
-            {
-                sb.AppendLine(
-                    $"    {function.Name}({string.Join(", ", function.Parameters.Select(p => p.Type.ToString()))})");
-            }
-        }
-
-        var outputFile = Path.Combine(repositoryRoot, "BindingGenerator/output.txt");
-        File.WriteAllText(outputFile, sb.ToString());
-
-        Console.WriteLine(sb.ToString());
+        TypeGenerator.Generate(compilation, repositoryRoot);
     }
 }

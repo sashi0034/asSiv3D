@@ -8,7 +8,6 @@ public static class TypeGenerator
     private static readonly IReadOnlyList<string> PredefinedCandidates = new List<string>()
     {
         "String",
-        "size_t",
     };
 
     private static readonly IReadOnlyList<string> GenerateCandidates = new List<string>()
@@ -44,17 +43,69 @@ public static class TypeGenerator
 
     private static string scriptTypeSignature(CppType type)
     {
-        if (type is CppTypedef typedef)
+        switch (type.TypeKind)
         {
-            if (typedef.ElementType is CppTypedef) return scriptTypeSignature(typedef.ElementType); // FIXME
-            return typedef.Name;
+        case CppTypeKind.Primitive:
+            var primitiveType = (CppPrimitiveType)type;
+            return primitiveType.Kind switch
+            {
+                CppPrimitiveKind.Void => "void",
+                CppPrimitiveKind.Bool => "bool",
+                CppPrimitiveKind.WChar => "",
+                CppPrimitiveKind.Char => "int8",
+                CppPrimitiveKind.Short => "int16",
+                CppPrimitiveKind.Int => "int32",
+                CppPrimitiveKind.Long => "",
+                CppPrimitiveKind.LongLong => "int64",
+                CppPrimitiveKind.UnsignedChar => "uint8",
+                CppPrimitiveKind.UnsignedShort => "uint16",
+                CppPrimitiveKind.UnsignedInt => "uint32",
+                CppPrimitiveKind.UnsignedLong => "",
+                CppPrimitiveKind.UnsignedLongLong => "uint64",
+                CppPrimitiveKind.Float => "float",
+                CppPrimitiveKind.Double => "double",
+                CppPrimitiveKind.LongDouble => "",
+                _ => throw new ArgumentOutOfRangeException()
+            };
+        case CppTypeKind.Pointer:
+            break;
+        case CppTypeKind.Reference:
+            var referenceType = (CppReferenceType)type;
+            return scriptTypeSignature(referenceType.ElementType) + "&";
+        case CppTypeKind.Array:
+            break;
+        case CppTypeKind.Qualified:
+            break;
+        case CppTypeKind.Function:
+            break;
+        case CppTypeKind.Typedef:
+            var typedef = (CppTypedef)type;
+            return scriptTypeSignature(typedef.ElementType); // FIXME
+        case CppTypeKind.StructOrClass:
+            var class_ = (CppClass)type;
+            if (GenerateCandidates.Contains(class_.Name) || PredefinedCandidates.Contains(class_.Name))
+            {
+                return class_.Name;
+            }
+
+            break;
+        case CppTypeKind.Enum:
+            break;
+        case CppTypeKind.TemplateParameterType:
+            break;
+        case CppTypeKind.TemplateParameterNonType:
+            break;
+        case CppTypeKind.TemplateArgumentType:
+            break;
+        case CppTypeKind.Unexposed:
+            break;
+        default:
+            throw new ArgumentOutOfRangeException();
         }
-        else
-        {
-            // throw new NotImplementedException("stringifyType not implemented.");
-            Console.WriteLine("Missing type handler: " + type.FullName);
-            return "";
-        }
+
+        // throw new NotImplementedException("stringifyType not implemented.");
+        Console.WriteLine("Missing type handler: " + type.TypeKind + " " + type.FullName);
+        return "";
     }
 
     private static string scriptFunctionSignature(CppFunction function)

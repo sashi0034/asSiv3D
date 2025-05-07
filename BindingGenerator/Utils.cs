@@ -29,4 +29,13 @@ public static class Utils
 
         return null;
     }
+
+    public static string ExtractRelativePath(string path, string root)
+    {
+        string unifiedPath = path.Replace('\\', '/');
+
+        int index = unifiedPath.LastIndexOf(root + "/");
+
+        return index >= 0 ? unifiedPath.Substring(index, unifiedPath.Length - index) : unifiedPath;
+    }
 }

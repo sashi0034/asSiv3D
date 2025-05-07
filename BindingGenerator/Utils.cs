@@ -38,4 +38,9 @@ public static class Utils
 
         return index >= 0 ? unifiedPath.Substring(index, unifiedPath.Length - index) : unifiedPath;
     }
+
+    public static string Join(this IEnumerable<string> value, string separator)
+    {
+        return string.Join(separator, value);
+    }
 }

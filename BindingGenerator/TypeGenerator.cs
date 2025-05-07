@@ -42,41 +42,84 @@ public static class TypeGenerator
         // Console.WriteLine(sb.ToString());
     }
 
-    private static string stringifyType(CppType type)
+    private static string scriptTypeSignature(CppType type)
     {
         if (type is CppTypedef typedef)
         {
-            if (typedef.ElementType is CppTypedef) return stringifyType(typedef.ElementType);
+            if (typedef.ElementType is CppTypedef) return scriptTypeSignature(typedef.ElementType); // FIXME
             return typedef.Name;
         }
         else
         {
-            throw new NotImplementedException("stringifyType not implemented.");
+            // throw new NotImplementedException("stringifyType not implemented.");
+            Console.WriteLine("Missing type handler: " + type.FullName);
+            return "";
         }
     }
 
+    private static string scriptFunctionSignature(CppFunction function)
+    {
+        string result = "";
+
+        var resultType = scriptTypeSignature(function.ReturnType);
+        if (resultType == "") return "";
+        result += resultType;
+
+        result += " " + function.Name + "(";
+
+        for (var index = 0; index < function.Parameters.Count; index++)
+        {
+            var parameter = function.Parameters[index];
+
+            if (index > 0) result += ", ";
+
+            var parameterType = scriptTypeSignature(parameter.Type);
+            if (parameterType == "") result += parameterType;
+
+            result += parameterType + " " + parameter.Name;
+        }
+
+        result += ")";
+
+        return result;
+    }
 
     private static void generateClass(CppClass class_, string rootPath)
     {
         string className = class_.Name;
         string includePath = Utils.ExtractRelativePath(class_.SourceFile, "Siv3D");
 
-
         var binds = new StringBuilder();
 
         foreach (var field in class_.Fields)
         {
+            var typeSignature = scriptTypeSignature(field.Type);
+            if (typeSignature == "") continue;
+
             binds.AppendLine(
                 $$"""
-                  bind.property("{{stringifyType(field.Type)}} {{field.Name}}", &{{className}}::{{field.Name}});
+                  bind.property("{{scriptTypeSignature(field.Type)}} {{field.Name}}", &{{className}}::{{field.Name}});
                   """);
         }
 
-        // foreach (var function in class_.Functions)
-        // {
-        //     binds.Append(
-        //         $"{function.Name}({string.Join(", ", function.Parameters.Select(p => p.Type.ToString()))})");
-        // }
+        foreach (var method in class_.Functions)
+        {
+            if (method.IsStatic) continue;
+
+            string functionSignature = scriptFunctionSignature(method);
+            if (functionSignature == "") continue;
+
+            string parameterTypes = method.Parameters.Select(p => p.Type.FullName).Join(", ");
+
+            string const_ = method.IsConst ? ", const_" : "";
+
+            binds.AppendLine(
+                $$"""
+                  bind.method(
+                    "{{functionSignature}}",
+                    overload_cast<{{parameterTypes}}>(&{{className}}::{{method.Name}}{{const_}}));
+                  """);
+        }
 
         string content =
             $$"""
@@ -110,15 +153,15 @@ public static class TypeGenerator
                       bind.behaviours_by_traits();
                       
                       return [engine, bind]() mutable{
-                          {{binds.ToString().Replace(Environment.NewLine, Environment.NewLine + "            ")}}
+                          {{binds.ToString().Trim().Replace(Environment.NewLine, Environment.NewLine + "            ")}}
                       };
                   }
               }
               """;
 
-        var outputFile = Path.Combine(rootPath, GenerateDirectory + $"script_{className}.generated.cpp");
-        File.WriteAllText(outputFile, content);
+        var outputFilepath = Path.Combine(rootPath, GenerateDirectory + $"script_{className}.generated.cpp");
+        File.WriteAllText(outputFilepath, content);
 
-        Console.WriteLine(content);
+        Console.WriteLine("Wrote file to " + outputFilepath);
     }
 }

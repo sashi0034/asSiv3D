@@ -71,7 +71,11 @@ public static class TypeGenerator
             break;
         case CppTypeKind.Reference:
             var referenceType = (CppReferenceType)type;
-            return scriptTypeSignature(referenceType.ElementType) + "&";
+
+            var typeSignature = scriptTypeSignature(referenceType.ElementType);
+            if (typeSignature == "") break;
+
+            return typeSignature + "&";
         case CppTypeKind.Array:
             break;
         case CppTypeKind.Qualified:
@@ -104,7 +108,7 @@ public static class TypeGenerator
         }
 
         // throw new NotImplementedException("stringifyType not implemented.");
-        Console.WriteLine("Missing type handler: " + type.TypeKind + " " + type.FullName);
+        Console.WriteLine("Missing type handler: " + type.TypeKind + ": " + type.FullName);
         return "";
     }
 
@@ -125,7 +129,7 @@ public static class TypeGenerator
             if (index > 0) result += ", ";
 
             var parameterType = scriptTypeSignature(parameter.Type);
-            if (parameterType == "") result += parameterType;
+            if (parameterType == "") return "";
 
             result += parameterType + " " + parameter.Name;
         }

@@ -21,7 +21,9 @@ internal static class Program
         var headerContent = File.ReadAllText(headerFile);
 
         var parseOption =
-            new CppParserOptions().ConfigureForWindowsMsvc(CppTargetCpu.X86_64, (CppVisualStudioVersion)1943);
+            new CppParserOptions().ConfigureForWindowsMsvc(CppTargetCpu.X86_64, (CppVisualStudioVersion)1944);
+
+        parseOption.Defines.Add("_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH");
 
         parseOption.AdditionalArguments.Add("-std=c++20");
 

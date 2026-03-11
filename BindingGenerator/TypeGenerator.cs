@@ -19,7 +19,7 @@ public static class TypeGenerator
 
     public static void Generate(CppCompilation ast, string rootPath)
     {
-        var s3d = ast.Namespaces.First(n => n.Name == "s3d");
+        var s3d = ast.Namespaces.FirstOrDefault(n => n.Name == "s3d");
         if (s3d == null)
         {
             Console.WriteLine("Could not find the s3d namespace.");
@@ -201,7 +201,7 @@ public static class TypeGenerator
               {
                   using namespace AngelScript;
 
-                  std::function<void()> ScriptRegister_{{className}}(asIScriptEngine* engine)
+                  std::function<void()> BindScript_{{className}}(asIScriptEngine* engine)
                   {
                       using namespace asbind20;
                       auto bind = asbind20::value_class<{{className}}>(engine, "{{className}}", asOBJ_POD | asOBJ_APP_CLASS_ALLINTS);
